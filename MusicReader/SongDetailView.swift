@@ -6,9 +6,7 @@ struct SongDetailView: View {
     @State private var showingEditor = false
     @State private var showingTeleprompter = false
     @State private var showingDeleteAlert = false
-    @State private var showingShareSheet = false
     @State private var selectedChordPopup: String?
-    @State private var pdfURL: URL?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     
@@ -185,17 +183,13 @@ struct SongDetailView: View {
         } message: {
             Text("Tej operacji nie można cofnąć.")
         }
-        .sheet(isPresented: $showingShareSheet) {
-            if let url = pdfURL {
-                ShareSheet(items: [url])
-            }
-        }
     }
+    
+    // MARK: - Eksport PDF
     
     private func exportPDF() {
         let data = PDFExporter.generatePDF(for: song)
         
-        // Zapisz do pliku tymczasowego z nazwą piosenki
         let sanitizedTitle = song.title
             .replacingOccurrences(of: "[/\\\\:*?\"<>|]", with: "_", options: .regularExpression)
             .trimmingCharacters(in: .whitespaces)
@@ -205,20 +199,28 @@ struct SongDetailView: View {
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fullName)
         try? data.write(to: tempURL)
         
-        self.pdfURL = tempURL
-        self.showingShareSheet = true
-    }
-}
-
-// MARK: - Share Sheet wrapper
-
-struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        return controller
+        presentShareSheet(with: tempURL)
     }
     
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+    /// Prezentuje UIActivityViewController bezpośrednio przez UIKit,
+    /// omijając problem pustego SwiftUI .sheet()
+    private func presentShareSheet(with url: URL) {
+        let activityVC = UIActivityViewController(
+            activityItems: [url],
+            applicationActivities: nil
+        )
+        
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootVC = windowScene.windows.first?.rootViewController else {
+            return
+        }
+        
+        // Znajdź najwyższy prezentowany VC w hierarchii
+        var topVC = rootVC
+        while let presented = topVC.presentedViewController {
+            topVC = presented
+        }
+        
+        topVC.present(activityVC, animated: true)
+    }
 }

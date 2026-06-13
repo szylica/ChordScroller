@@ -179,6 +179,21 @@ struct ChordDatabase {
             fingers: [ 0, 1, 0, 2, 4, 3])
         db["Hm7"] = db["Bm7"]!
         
+        // F#m7 (barré)
+        db["F#m7"] = ChordDefinition("F#m7",
+            frets:   [2, 4, 2, 2, 2, 2],
+            fingers: [1, 3, 1, 1, 1, 1],
+            barres: [2])
+        db["Fism7"] = db["F#m7"]!
+        
+        // C#m7 (barré)
+        db["C#m7"] = ChordDefinition("C#m7",
+            frets:   [-1, 4, 6, 4, 5, 4],
+            fingers: [ 0, 1, 3, 1, 2, 1],
+            baseFret: 4,
+            barres: [4])
+        db["Cism7"] = db["C#m7"]!
+        
         // ===== AKORDY SUS =====
         
         // Dsus2
@@ -206,7 +221,7 @@ struct ChordDatabase {
             frets:   [0, 2, 2, 2, 0, 0],
             fingers: [0, 2, 3, 4, 0, 0])
         
-        // ===== AKORDY ADD =====
+        // ===== AKORDY ADD / ROZSZERZONE =====
         
         // Cadd9
         db["Cadd9"] = ChordDefinition("Cadd9",
@@ -217,6 +232,62 @@ struct ChordDatabase {
         db["Gadd9"] = ChordDefinition("Gadd9",
             frets:   [3, 2, 0, 2, 0, 3],
             fingers: [2, 1, 0, 3, 0, 4])
+            
+        // Cmaj7
+        db["Cmaj7"] = ChordDefinition("Cmaj7",
+            frets:   [-1, 3, 2, 0, 0, 0],
+            fingers: [ 0, 3, 2, 0, 0, 0])
+            
+        // Fmaj7
+        db["Fmaj7"] = ChordDefinition("Fmaj7",
+            frets:   [-1, -1, 3, 2, 1, 0],
+            fingers: [ 0,  0, 3, 2, 1, 0])
+            
+        // G6
+        db["G6"] = ChordDefinition("G6",
+            frets:   [3, 2, 0, 0, 0, 0],
+            fingers: [2, 1, 0, 0, 0, 0])
+            
+        // Am9
+        db["Am9"] = ChordDefinition("Am9",
+            frets:   [-1, 0, 2, 4, 1, 0],
+            fingers: [ 0, 0, 2, 4, 1, 0])
+            
+        // ===== SLASH CHORDS (Z INNYM BASEM) =====
+        
+        // Cmaj9/B (lub C/B / Cmaj7/B – przejście basowe z C do Am)
+        db["Cmaj9/B"] = ChordDefinition("Cmaj9/B",
+            frets:   [-1, 2, 0, 0, 1, 0],
+            fingers: [ 0, 2, 0, 0, 1, 0])
+        db["Cmaj7/B"] = ChordDefinition("Cmaj7/B",
+            frets:   [-1, 2, 2, 0, 1, 0],
+            fingers: [ 0, 2, 3, 0, 1, 0])
+        db["C/B"]  = db["Cmaj7/B"]!
+        db["C9/B"] = db["Cmaj9/B"]!
+        db["C7/B"] = db["Cmaj7/B"]!
+        
+        // D/F#
+        db["D/F#"] = ChordDefinition("D/F#",
+            frets:   [2, 0, 0, 2, 3, 2],
+            fingers: [1, 0, 0, 2, 3, 4])
+        db["Dadd9/F#"] = ChordDefinition("Dadd9/F#",
+            frets:   [2, 0, 0, 2, 3, 0],
+            fingers: [1, 0, 0, 2, 3, 0])
+            
+        // G/B
+        db["G/B"] = ChordDefinition("G/B",
+            frets:   [-1, 2, 0, 0, 3, 3],
+            fingers: [ 0, 1, 0, 0, 3, 4])
+            
+        // A/C#
+        db["A/C#"] = ChordDefinition("A/C#",
+            frets:   [-1, 4, 2, 2, 2, 0],
+            fingers: [ 0, 3, 1, 1, 1, 0])
+            
+        // Em/D
+        db["Em/D"] = ChordDefinition("Em/D",
+            frets:   [-1, -1, 0, 0, 0, 0],
+            fingers: [ 0,  0, 0, 0, 0, 0])
         
         // ===== AKORDY Z # i b =====
         

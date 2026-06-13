@@ -21,7 +21,7 @@ struct FormattedSongView: View {
         VStack(alignment: .leading, spacing: 14) {
             ForEach(lines) { line in
                 if line.isEmpty {
-                    Color.clear.frame(height: 6)
+                    Color.clear.frame(height: fontSize * 0.5)
                 } else if line.hasChords {
                     WrappingChordLineView(
                         segments: line.segments,
@@ -67,10 +67,10 @@ struct WordSegmentView: View {
     let onChordTap: ((String) -> Void)?
     @Environment(\.colorScheme) private var colorScheme
     
-    private var chordSize: Double { fontSize * 0.82 }
+    private var chordSize: Double { fontSize * 0.85 }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
+        VStack(alignment: .leading, spacing: 2) {
             // Linia akordu
             if let chord = segment.chord, !chord.isEmpty {
                 if let tap = onChordTap {
@@ -90,7 +90,7 @@ struct WordSegmentView: View {
                 .font(.system(size: fontSize, design: .monospaced))
                 .foregroundStyle(AppTheme.primaryText(for: colorScheme))
         }
-        .fixedSize()   // ← KLUCZOWE: segment raportuje swój naturalny rozmiar
+        .fixedSize() // KLUCZOWE: segment raportuje swój naturalny rozmiar
     }
     
     private func chordLabel(_ chord: String) -> some View {

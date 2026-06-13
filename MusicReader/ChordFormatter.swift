@@ -5,9 +5,11 @@ import Foundation
 struct ChordSegment: Identifiable {
     let id = UUID()
     let chord: String?
-    let text: String       // słowo Z trailing spacją jeśli nie jest ostatnie
+    let text: String // słowo lub chunk słowa ze spacjami
     
-    var hasChord: Bool { chord != nil && !chord!.isEmpty }
+    var hasChord: Bool {
+        chord != nil && !chord!.isEmpty
+    }
 }
 
 // MARK: - Sparsowana linia
@@ -32,143 +34,120 @@ struct ChordFormatter {
     /// Parsuje pojedynczą linię na segmenty
     static func parseLine(_ line: String) -> ParsedLine {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
-        
         if trimmed.isEmpty {
             return ParsedLine(segments: [], isEmpty: true, hasChords: false, rawText: "")
         }
         
-        guard containsChords(trimmed) else {
+        guard containsChords(line) else {
             return ParsedLine(
-                segments: [ChordSegment(chord: nil, text: trimmed)],
-                isEmpty: false, hasChords: false, rawText: trimmed
+                segments: [ChordSegment(chord: nil, text: line)],
+                isEmpty: false,
+                hasChords: false,
+                rawText: line
             )
         }
         
         let segments = buildSegments(from: line)
         let rawText = segments.map { $0.text }.joined()
-        
         return ParsedLine(segments: segments, isEmpty: false, hasChords: true, rawText: rawText)
     }
     
-    // MARK: - Parser wewnętrzny
+    // MARK: - Algorytm budowania segmentów
     
     private static func buildSegments(from line: String) -> [ChordSegment] {
-        let pattern = #"\[([^\]]+)\]"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else {
-            return [ChordSegment(chord: nil, text: line)]
+        // Faza 1: Skanuj linię → wyciągnij pary (akord, tekst za nim)
+        
+        var rawPairs: [(chord: String?, text: String)] = []
+        var pendingChord: String? = nil
+        var currentText = ""
+        var inChord = false
+        var chordBuffer = ""
+        
+        for char in line {
+            if char == "[" {
+                if !currentText.isEmpty || pendingChord != nil {
+                    rawPairs.append((pendingChord, currentText))
+                    pendingChord = nil
+                    currentText = ""
+                }
+                inChord = true
+                chordBuffer = ""
+            } else if char == "]" && inChord {
+                inChord = false
+                pendingChord = chordBuffer.trimmingCharacters(in: .whitespaces)
+            } else if inChord {
+                chordBuffer.append(char)
+            } else {
+                currentText.append(char)
+            }
+        }
+        // Resztki
+        if !currentText.isEmpty || pendingChord != nil {
+            rawPairs.append((pendingChord, currentText))
         }
         
-        let nsLine = line as NSString
-        let matches = regex.matches(in: line, range: NSRange(location: 0, length: nsLine.length))
+        // Faza 2: Rozbij długi tekst na słowa (dla poprawnego zawijania),
+        // ale akord przypisuj TYLKO do pierwszego słowa.
         
-        guard !matches.isEmpty else {
-            return [ChordSegment(chord: nil, text: line)]
-        }
+        var segments: [ChordSegment] = []
         
-        // 1. Wyciągnij tekst bez akordów i pozycje akordów
-        var cleanText = ""
-        var chordPositions: [(chord: String, position: Int)] = []
-        var lastEnd = 0
-        
-        for match in matches {
-            // Tekst przed akordem
-            let beforeRange = NSRange(location: lastEnd, length: match.range.location - lastEnd)
-            let before = nsLine.substring(with: beforeRange)
+        for pair in rawPairs {
+            let words = splitKeepingSpaces(pair.text)
             
-            let pos = cleanText.count + before.count
-            let chord = nsLine.substring(with: match.range(at: 1))
-            
-            chordPositions.append((chord, pos))
-            cleanText += before
-            lastEnd = match.range.location + match.range.length
-        }
-        
-        // Tekst po ostatnim akordzie
-        if lastEnd < nsLine.length {
-            cleanText += nsLine.substring(from: lastEnd)
-        }
-        
-        // 2. Podziel tekst na słowa (zachowując pozycje)
-        //    Każde słowo = zakres znaków w cleanText
-        var wordRanges: [(start: Int, end: Int)] = []
-        var wordStart: Int? = nil
-        
-        for (i, char) in cleanText.enumerated() {
-            if char == " " {
-                if let ws = wordStart {
-                    wordRanges.append((ws, i))
-                    wordStart = nil
+            if words.isEmpty {
+                // Akord bez tekstu (np. [G] na końcu linii lub [G][Cadd9])
+                if let chord = pair.chord, !chord.isEmpty {
+                    segments.append(ChordSegment(chord: chord, text: ""))
                 }
             } else {
-                if wordStart == nil { wordStart = i }
-            }
-        }
-        if let ws = wordStart {
-            wordRanges.append((ws, cleanText.count))
-        }
-        
-        // 3. Przypisz akordy do słów
-        guard !wordRanges.isEmpty else {
-            // Tylko akordy, brak tekstu
-            return chordPositions.map { ChordSegment(chord: $0.chord, text: "") }
-        }
-        
-        // Dla każdego słowa znajdź akord który jest przy nim (przed lub na początku słowa)
-        var segments: [ChordSegment] = []
-        var usedChords = Set<Int>()
-        
-        for (wordIdx, wordRange) in wordRanges.enumerated() {
-            let wordText = substring(cleanText, from: wordRange.start, to: wordRange.end)
-            
-            // Czy to ostatnie słowo?
-            let isLast = wordIdx == wordRanges.count - 1
-            // Dodaj spację po słowie (chyba że ostatnie)
-            let displayText = isLast ? wordText : wordText + " "
-            
-            // Znajdź akord dla tego słowa
-            var assignedChord: String? = nil
-            
-            for (chordIdx, cp) in chordPositions.enumerated() {
-                if usedChords.contains(chordIdx) { continue }
-                
-                // Akord jest przypisany do słowa jeśli jego pozycja jest:
-                // - na początku lub w środku tego słowa
-                // - lub między końcem poprzedniego słowa a początkiem tego
-                let prevEnd = wordIdx > 0 ? wordRanges[wordIdx - 1].end : 0
-                
-                if cp.position >= prevEnd && cp.position <= wordRange.end {
-                    if assignedChord == nil {
-                        assignedChord = cp.chord
-                        usedChords.insert(chordIdx)
-                    } else {
-                        // Wiele akordów na jedno słowo - dodaj poprzedni segment i zacznij nowy
-                        // (rzadki przypadek)
-                        assignedChord = assignedChord! + " " + cp.chord
-                        usedChords.insert(chordIdx)
-                    }
+                for (idx, word) in words.enumerated() {
+                    let chord = (idx == 0) ? pair.chord : nil
+                    segments.append(ChordSegment(chord: chord, text: word))
                 }
-            }
-            
-            segments.append(ChordSegment(chord: assignedChord, text: displayText))
-        }
-        
-        // Akordy na końcu bez tekstu
-        for (chordIdx, cp) in chordPositions.enumerated() {
-            if !usedChords.contains(chordIdx) {
-                segments.append(ChordSegment(chord: cp.chord, text: " "))
             }
         }
         
         return segments
     }
     
-    private static func substring(_ str: String, from: Int, to: Int) -> String {
-        let start = str.index(str.startIndex, offsetBy: from)
-        let end = str.index(str.startIndex, offsetBy: min(to, str.count))
-        return String(str[start..<end])
+    // MARK: - Dzielenie tekstu na słowa z zachowaniem spacji
+    
+    /// Dzieli tekst na słowa, gdzie każde słowo zachowuje swoje trailing spacje.
+    /// "o mnie w " → ["o ", "mnie ", "w "]
+    /// "mieście:" → ["mieście:"]
+    /// "" → []
+    private static func splitKeepingSpaces(_ text: String) -> [String] {
+        guard !text.isEmpty else { return [] }
+        
+        var words: [String] = []
+        var current = ""
+        var wasSpace = false
+        
+        for char in text {
+            if char.isWhitespace {
+                current.append(char)
+                wasSpace = true
+            } else {
+                if wasSpace && !current.isEmpty {
+                    // Nowe słowo się zaczyna – zapisz poprzednie (ze spacjami na końcu)
+                    words.append(current)
+                    current = ""
+                }
+                current.append(char)
+                wasSpace = false
+            }
+        }
+        
+        if !current.isEmpty {
+            words.append(current)
+        }
+        
+        return words
     }
     
-    static func containsChords(_ text: String) -> Bool {
+    // MARK: - Pomocnicze
+    
+    private static func containsChords(_ text: String) -> Bool {
         text.range(of: #"\[[^\]]+\]"#, options: .regularExpression) != nil
     }
 }

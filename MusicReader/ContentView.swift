@@ -5,6 +5,8 @@ struct ContentView: View {
     @State private var showingNewSong = false
     @State private var showingImport = false
     @State private var showingSettings = false
+    @State private var showingTuner = false
+    @State private var showingMenu = false
     @State private var searchText = ""
     @State private var selectedTag: String? = nil
     @Environment(\.colorScheme) private var colorScheme
@@ -19,7 +21,6 @@ struct ContentView: View {
         
         // Filtruj po tekście wyszukiwania (przeszukuje WSZYSTKIE piosenki)
         if !searchText.isEmpty {
-            // Wyszukiwanie ignoruje filtr tagów
             result = store.songs.filter {
                 $0.title.localizedCaseInsensitiveContains(searchText) ||
                 $0.tags.contains(where: { $0.localizedCaseInsensitiveContains(searchText) })
@@ -65,11 +66,13 @@ struct ContentView: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     HStack(spacing: 16) {
                         Button {
-                            showingSettings = true
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                showingMenu = true
+                            }
                         } label: {
-                            Image(systemName: "gearshape")
+                            Image(systemName: "line.3.horizontal")
                                 .font(.title3)
-                                .foregroundStyle(.gray)
+                                .foregroundStyle(.orange)
                         }
                         
                         Button {
@@ -100,9 +103,30 @@ struct ContentView: View {
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
             }
+            .fullScreenCover(isPresented: $showingTuner) {
+                TunerView()
+            }
         }
         .tint(.orange)
+        .overlay {
+            ToolPanelView(isPresented: $showingMenu) { item in
+                handleMenuSelection(item)
+            }
+        }
     }
+    
+    // MARK: - Obsługa wyboru z menu
+    
+    private func handleMenuSelection(_ item: ToolMenuItem) {
+        switch item {
+        case .tuner:
+            showingTuner = true
+        case .settings:
+            showingSettings = true
+        }
+    }
+    
+    // MARK: - Pomocnicze
     
     private var tagCounts: [String: Int] {
         var counts: [String: Int] = [:]
@@ -126,7 +150,6 @@ struct ContentView: View {
                 .listRowSeparator(.hidden)
             }
             .onDelete { offsets in
-                // Musimy mapować indeksy z filteredSongs na store.songs
                 let songsToDelete = offsets.map { filteredSongs[$0] }
                 for song in songsToDelete {
                     store.delete(song)
@@ -190,7 +213,6 @@ struct TagFilterBar: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                // "Wszystkie"
                 TagChip(
                     label: "Wszystkie",
                     count: nil,
@@ -199,7 +221,6 @@ struct TagFilterBar: View {
                     withAnimation(.easeInOut(duration: 0.2)) { selectedTag = nil }
                 }
                 
-                // Poszczególne tagi
                 ForEach(tags, id: \.self) { tag in
                     TagChip(
                         label: tag,
@@ -287,7 +308,6 @@ struct SongRowView: View {
                         .font(.caption)
                         .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                     
-                    // Tagi
                     if !song.tags.isEmpty {
                         Text("•")
                             .font(.caption)

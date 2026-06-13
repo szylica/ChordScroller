@@ -6,6 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F111FFD42FDCD246005C4FBE /* AudioKit in Frameworks */ = {isa = PBXBuildFile; productRef = F111FFD32FDCD246005C4FBE /* AudioKit */; };
+		F111FFD72FDCD2DB005C4FBE /* AudioKitEX in Frameworks */ = {isa = PBXBuildFile; productRef = F111FFD62FDCD2DB005C4FBE /* AudioKitEX */; };
+		F111FFDA2FDCD2F4005C4FBE /* CSoundpipeAudioKit in Frameworks */ = {isa = PBXBuildFile; productRef = F111FFD92FDCD2F4005C4FBE /* CSoundpipeAudioKit */; };
+		F111FFDC2FDCD2F4005C4FBE /* SoundpipeAudioKit in Frameworks */ = {isa = PBXBuildFile; productRef = F111FFDB2FDCD2F4005C4FBE /* SoundpipeAudioKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		F1C676E02FD481C3009B1665 /* MusicReader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MusicReader.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +43,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F111FFDA2FDCD2F4005C4FBE /* CSoundpipeAudioKit in Frameworks */,
+				F111FFD42FDCD246005C4FBE /* AudioKit in Frameworks */,
+				F111FFDC2FDCD2F4005C4FBE /* SoundpipeAudioKit in Frameworks */,
+				F111FFD72FDCD2DB005C4FBE /* AudioKitEX in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +89,10 @@
 			);
 			name = MusicReader;
 			packageProductDependencies = (
+				F111FFD32FDCD246005C4FBE /* AudioKit */,
+				F111FFD62FDCD2DB005C4FBE /* AudioKitEX */,
+				F111FFD92FDCD2F4005C4FBE /* CSoundpipeAudioKit */,
+				F111FFDB2FDCD2F4005C4FBE /* SoundpipeAudioKit */,
 			);
 			productName = MusicReader;
 			productReference = F1C676E02FD481C3009B1665 /* MusicReader.app */;
@@ -108,6 +123,11 @@
 			);
 			mainGroup = F1C676D72FD481C3009B1665;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F111FFD22FDCD246005C4FBE /* XCRemoteSwiftPackageReference "AudioKit" */,
+				F111FFD52FDCD2DB005C4FBE /* XCRemoteSwiftPackageReference "AudioKitEX" */,
+				F111FFD82FDCD2F4005C4FBE /* XCRemoteSwiftPackageReference "SoundpipeAudioKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F1C676E12FD481C3009B1665 /* Products */;
 			projectDirPath = "";
@@ -261,11 +281,13 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GQ6PRHRY5Y;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MusicReader/Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "hordScroller potrzebuje dostępu do mikrofonu, aby działał stroik gitarowy.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -306,11 +328,13 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GQ6PRHRY5Y;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MusicReader/Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "hordScroller potrzebuje dostępu do mikrofonu, aby działał stroik gitarowy.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -364,6 +388,56 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F111FFD22FDCD246005C4FBE /* XCRemoteSwiftPackageReference "AudioKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AudioKit/AudioKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.7.2;
+			};
+		};
+		F111FFD52FDCD2DB005C4FBE /* XCRemoteSwiftPackageReference "AudioKitEX" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AudioKit/AudioKitEX.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.7.0;
+			};
+		};
+		F111FFD82FDCD2F4005C4FBE /* XCRemoteSwiftPackageReference "SoundpipeAudioKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AudioKit/SoundpipeAudioKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.7.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F111FFD32FDCD246005C4FBE /* AudioKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F111FFD22FDCD246005C4FBE /* XCRemoteSwiftPackageReference "AudioKit" */;
+			productName = AudioKit;
+		};
+		F111FFD62FDCD2DB005C4FBE /* AudioKitEX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F111FFD52FDCD2DB005C4FBE /* XCRemoteSwiftPackageReference "AudioKitEX" */;
+			productName = AudioKitEX;
+		};
+		F111FFD92FDCD2F4005C4FBE /* CSoundpipeAudioKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F111FFD82FDCD2F4005C4FBE /* XCRemoteSwiftPackageReference "SoundpipeAudioKit" */;
+			productName = CSoundpipeAudioKit;
+		};
+		F111FFDB2FDCD2F4005C4FBE /* SoundpipeAudioKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F111FFD82FDCD2F4005C4FBE /* XCRemoteSwiftPackageReference "SoundpipeAudioKit" */;
+			productName = SoundpipeAudioKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F1C676D82FD481C3009B1665 /* Project object */;
 }

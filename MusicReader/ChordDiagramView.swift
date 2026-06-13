@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ChordDiagramView: View {
-    let chord: ChordDefinition
+    let chord: ChordDefinition  
     let size: CGFloat
     @Environment(\.colorScheme) private var colorScheme
     

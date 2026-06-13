@@ -119,8 +119,8 @@ struct ContentView: View {
                     let screenWidth = UIScreen.main.bounds.width
                     
                     if !showingMenu {
-                        // Swipe w prawo z lewych 25% ekranu → otwórz menu
-                        if value.startLocation.x < screenWidth * 0.25 && value.translation.width > 60 {
+                        // Swipe w prawo z lewych 35% ekranu → otwórz menu
+                        if value.startLocation.x < screenWidth * 0.35 && value.translation.width > 60 {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                                 showingMenu = true
                             }
@@ -168,8 +168,10 @@ struct ContentView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(AppTheme.cardBackground(for: colorScheme))
                         .padding(.vertical, 2)
+                        .padding(.horizontal, 8)
                 )
                 .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 12))
             }
             .onDelete { offsets in
                 let songsToDelete = offsets.map { filteredSongs[$0] }
@@ -305,42 +307,42 @@ struct TagChip: View {
 struct SongRowView: View {
     let song: Song
     @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 16) {
+            // Ikonka
             ZStack {
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 13)
                     .fill(Color.orange.opacity(0.2))
-                    .frame(width: 48, height: 48)
+                    .frame(width: 56, height: 56)
                 Text(String(song.title.prefix(1)).uppercased())
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundStyle(.orange)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            // Tekst
+            VStack(alignment: .leading, spacing: 8) {
                 Text(song.title.isEmpty ? "Bez tytułu" : song.title)
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(AppTheme.primaryText(for: colorScheme))
                     .lineLimit(1)
                 
                 HStack(spacing: 6) {
                     let lineCount = song.content.components(separatedBy: "\n").count
                     Text("\(lineCount) linii • \(Int(song.scrollSpeed)) px/s")
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                     
                     if !song.tags.isEmpty {
                         Text("•")
-                            .font(.caption)
+                            .font(.system(size: 13))
                             .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                         
                         ForEach(song.tags.prefix(2), id: \.self) { tag in
                             Text(tag)
-                                .font(.system(size: 10, weight: .medium))
+                                .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(.orange)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
                                 .background(
                                     Capsule()
                                         .fill(AppTheme.chordButtonBackground(for: colorScheme))
@@ -349,7 +351,7 @@ struct SongRowView: View {
                         
                         if song.tags.count > 2 {
                             Text("+\(song.tags.count - 2)")
-                                .font(.system(size: 10, weight: .medium))
+                                .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                         }
                     }
@@ -358,7 +360,7 @@ struct SongRowView: View {
 
             Spacer()
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 4)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 8)
     }
 }

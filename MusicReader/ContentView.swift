@@ -14,12 +14,10 @@ struct ContentView: View {
     var filteredSongs: [Song] {
         var result = store.songs
         
-        // Filtruj po tagu
         if let tag = selectedTag {
             result = result.filter { $0.tags.contains(tag) }
         }
         
-        // Filtruj po tekście wyszukiwania (przeszukuje WSZYSTKIE piosenki)
         if !searchText.isEmpty {
             result = store.songs.filter {
                 $0.title.localizedCaseInsensitiveContains(searchText) ||
@@ -31,110 +29,96 @@ struct ContentView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                AppTheme.background(for: colorScheme)
-                    .ignoresSafeArea()
+        ZStack {
+            NavigationStack {
+                ZStack {
+                    AppTheme.background(for: colorScheme)
+                        .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // Filtry tagów
-                    if !store.allTags.isEmpty && searchText.isEmpty {
-                        TagFilterBar(
-                            tags: store.allTags,
-                            selectedTag: $selectedTag,
-                            songCounts: tagCounts
-                        )
-                    }
-                    
-                    if store.songs.isEmpty {
-                        Spacer()
-                        emptyState
-                        Spacer()
-                    } else if filteredSongs.isEmpty {
-                        Spacer()
-                        noResultsState
-                        Spacer()
-                    } else {
-                        songList
-                    }
-                }
-            }
-            .navigationTitle("Biblioteka")
-            .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $searchText, prompt: "Szukaj piosenki…")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    HStack(spacing: 16) {
-                        Button {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                                showingMenu = true
-                            }
-                        } label: {
-                            Image(systemName: "line.3.horizontal")
-                                .font(.title3)
-                                .foregroundStyle(.orange)
+                    VStack(spacing: 0) {
+                        if !store.allTags.isEmpty && searchText.isEmpty {
+                            TagFilterBar(
+                                tags: store.allTags,
+                                selectedTag: $selectedTag,
+                                songCounts: tagCounts
+                            )
                         }
                         
+                        if store.songs.isEmpty {
+                            Spacer()
+                            emptyState
+                            Spacer()
+                        } else if filteredSongs.isEmpty {
+                            Spacer()
+                            noResultsState
+                            Spacer()
+                        } else {
+                            songList
+                        }
+                    }
+                    
+                    // Gest swipe od lewej krawędzi – tylko na ekranie biblioteki
+                    EdgeSwipeArea {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                            showingMenu = true
+                        }
+                    }
+                }
+                .navigationTitle("Biblioteka")
+                .navigationBarTitleDisplayMode(.large)
+                .searchable(text: $searchText, prompt: "Szukaj piosenki…")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        HStack(spacing: 16) {
+                            Button {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                    showingMenu = true
+                                }
+                            } label: {
+                                Image(systemName: "line.3.horizontal")
+                                    .font(.title3)
+                                    .foregroundStyle(.orange)
+                            }
+                            
+                            Button {
+                                showingImport = true
+                            } label: {
+                                Image(systemName: "arrow.down.circle")
+                                    .font(.title2)
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
                         Button {
-                            showingImport = true
+                            showingNewSong = true
                         } label: {
-                            Image(systemName: "arrow.down.circle")
+                            Image(systemName: "plus.circle.fill")
                                 .font(.title2)
                                 .foregroundStyle(.orange)
                         }
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingNewSong = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(.orange)
-                    }
+                .sheet(isPresented: $showingNewSong) {
+                    EditorView(store: store, song: nil)
+                }
+                .sheet(isPresented: $showingImport) {
+                    ImportView(store: store)
+                }
+                .sheet(isPresented: $showingSettings) {
+                    SettingsView()
+                }
+                .fullScreenCover(isPresented: $showingTuner) {
+                    TunerView()
                 }
             }
-            .sheet(isPresented: $showingNewSong) {
-                EditorView(store: store, song: nil)
-            }
-            .sheet(isPresented: $showingImport) {
-                ImportView(store: store)
-            }
-            .sheet(isPresented: $showingSettings) {
-                SettingsView()
-            }
-            .fullScreenCover(isPresented: $showingTuner) {
-                TunerView()
-            }
-        }
-        .tint(.orange)
-        .overlay {
+            .tint(.orange)
+            
+            // Menu – nad NavigationStack
             ToolPanelView(isPresented: $showingMenu) { item in
                 handleMenuSelection(item)
             }
         }
-        .gesture(
-            DragGesture()
-                .onEnded { value in
-                    let screenWidth = UIScreen.main.bounds.width
-                    
-                    if !showingMenu {
-                        // Swipe w prawo z lewych 35% ekranu → otwórz menu
-                        if value.startLocation.x < screenWidth * 0.35 && value.translation.width > 60 {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                                showingMenu = true
-                            }
-                        }
-                    } else {
-                        // Swipe w lewo → zamknij menu
-                        if value.translation.width < -60 {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                                showingMenu = false
-                            }
-                        }
-                    }
-                }
-        )
     }
     
     // MARK: - Obsługa wyboru z menu
@@ -161,17 +145,17 @@ struct ContentView: View {
     private var songList: some View {
         List {
             ForEach(filteredSongs) { song in
-                NavigationLink(destination: SongDetailView(store: store, song: song)) {
+                NavigationLink(destination: LazyView(SongDetailView(store: store, song: song))) {
                     SongRowView(song: song)
                 }
                 .listRowBackground(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 14)
                         .fill(AppTheme.cardBackground(for: colorScheme))
-                        .padding(.vertical, 2)
-                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .padding(.horizontal, 12)
                 )
+                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 12))
             }
             .onDelete { offsets in
                 let songsToDelete = offsets.map { filteredSongs[$0] }
@@ -224,6 +208,61 @@ struct ContentView: View {
             }
         }
     }
+}
+
+// MARK: - Gest swipe od lewej krawędzi (UIKit – nie blokuje List scrolla)
+
+struct EdgeSwipeArea: UIViewRepresentable {
+    let onSwipe: () -> Void
+    
+    func makeUIView(context: Context) -> EdgeSwipeView {
+        let view = EdgeSwipeView()
+        view.backgroundColor = .clear
+        view.isUserInteractionEnabled = true
+        
+        let pan = UIScreenEdgePanGestureRecognizer(
+            target: context.coordinator,
+            action: #selector(Coordinator.handleSwipe(_:))
+        )
+        pan.edges = .left
+        view.addGestureRecognizer(pan)
+        
+        return view
+    }
+    
+    func updateUIView(_ uiView: EdgeSwipeView, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator { Coordinator(onSwipe: onSwipe) }
+    
+    class Coordinator: NSObject {
+        let onSwipe: () -> Void
+        init(onSwipe: @escaping () -> Void) { self.onSwipe = onSwipe }
+        
+        @objc func handleSwipe(_ gesture: UIScreenEdgePanGestureRecognizer) {
+            if gesture.state == .recognized {
+                onSwipe()
+            }
+        }
+    }
+}
+
+/// UIView który łapie tylko gesty przy lewej krawędzi
+final class EdgeSwipeView: UIView {
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        return point.x < 25
+    }
+}
+
+// MARK: - Lazy loading widoków
+
+struct LazyView<Content: View>: View {
+    let build: () -> Content
+    
+    init(_ build: @autoclosure @escaping () -> Content) {
+        self.build = build
+    }
+    
+    var body: Content { build() }
 }
 
 // MARK: - Pasek filtrów tagów
@@ -307,9 +346,9 @@ struct TagChip: View {
 struct SongRowView: View {
     let song: Song
     @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         HStack(spacing: 16) {
-            // Ikonka
             ZStack {
                 RoundedRectangle(cornerRadius: 13)
                     .fill(Color.orange.opacity(0.2))
@@ -319,7 +358,6 @@ struct SongRowView: View {
                     .foregroundStyle(.orange)
             }
 
-            // Tekst
             VStack(alignment: .leading, spacing: 8) {
                 Text(song.title.isEmpty ? "Bez tytułu" : song.title)
                     .font(.system(size: 17, weight: .semibold))

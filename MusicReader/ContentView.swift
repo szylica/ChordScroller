@@ -113,6 +113,28 @@ struct ContentView: View {
                 handleMenuSelection(item)
             }
         }
+        .gesture(
+            DragGesture()
+                .onEnded { value in
+                    let screenWidth = UIScreen.main.bounds.width
+                    
+                    if !showingMenu {
+                        // Swipe w prawo z lewych 25% ekranu → otwórz menu
+                        if value.startLocation.x < screenWidth * 0.25 && value.translation.width > 60 {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                showingMenu = true
+                            }
+                        }
+                    } else {
+                        // Swipe w lewo → zamknij menu
+                        if value.translation.width < -60 {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                showingMenu = false
+                            }
+                        }
+                    }
+                }
+        )
     }
     
     // MARK: - Obsługa wyboru z menu

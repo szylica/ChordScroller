@@ -67,14 +67,7 @@ struct TunerView: View {
                         .foregroundStyle(.orange)
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Text("beta")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.black)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Capsule().fill(Color.orange))
-                }
+
             }
             .onAppear { engine.start() }
             .onDisappear { engine.stop() }

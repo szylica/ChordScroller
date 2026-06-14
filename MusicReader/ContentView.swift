@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var store = SongStore()
+    @ObservedObject private var settingsManager = SettingsManager.shared
     @State private var showingNewSong = false
     @State private var showingImport = false
     @State private var showingSettings = false
@@ -9,8 +10,17 @@ struct ContentView: View {
     @State private var showingMenu = false
     @State private var searchText = ""
     @State private var selectedTag: String? = nil
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorScheme) private var systemColorScheme
 
+    // MARK: - Efektywny schemat kolorów (reaguje natychmiast)
+    
+    private var effectiveScheme: ColorScheme {
+        AppTheme.resolveColorScheme(
+            appScheme: settingsManager.settings.colorScheme,
+            systemScheme: systemColorScheme
+        )
+    }
+    
     var filteredSongs: [Song] {
         var result = store.songs
         
@@ -32,7 +42,7 @@ struct ContentView: View {
         ZStack {
             NavigationStack {
                 ZStack {
-                    AppTheme.background(for: colorScheme)
+                    AppTheme.background(for: effectiveScheme)
                         .ignoresSafeArea()
 
                     VStack(spacing: 0) {
@@ -40,7 +50,8 @@ struct ContentView: View {
                             TagFilterBar(
                                 tags: store.allTags,
                                 selectedTag: $selectedTag,
-                                songCounts: tagCounts
+                                songCounts: tagCounts,
+                                colorScheme: effectiveScheme
                             )
                         }
                         
@@ -57,7 +68,6 @@ struct ContentView: View {
                         }
                     }
                     
-                    // Gest swipe od lewej krawędzi – tylko na ekranie biblioteki
                     EdgeSwipeArea {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                             showingMenu = true
@@ -67,6 +77,11 @@ struct ContentView: View {
                 .navigationTitle("Biblioteka")
                 .navigationBarTitleDisplayMode(.large)
                 .searchable(text: $searchText, prompt: "Szukaj piosenki…")
+                .navigationDestination(for: Song.ID.self) { songID in
+                    if let song = store.songs.first(where: { $0.id == songID }) {
+                        SongDetailView(store: store, song: song)
+                    }
+                }
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         HStack(spacing: 16) {
@@ -101,24 +116,28 @@ struct ContentView: View {
                 }
                 .sheet(isPresented: $showingNewSong) {
                     EditorView(store: store, song: nil)
+                        .preferredColorScheme(settingsManager.settings.colorScheme.colorScheme)
                 }
                 .sheet(isPresented: $showingImport) {
                     ImportView(store: store)
+                        .preferredColorScheme(settingsManager.settings.colorScheme.colorScheme)
                 }
                 .sheet(isPresented: $showingSettings) {
                     SettingsView()
                 }
                 .fullScreenCover(isPresented: $showingTuner) {
                     TunerView()
+                        .preferredColorScheme(settingsManager.settings.colorScheme.colorScheme)
                 }
             }
             .tint(.orange)
             
-            // Menu – nad NavigationStack
             ToolPanelView(isPresented: $showingMenu) { item in
                 handleMenuSelection(item)
             }
         }
+        // Wymuszenie re-renderu CAŁEGO drzewa widoków przy zmianie motywu
+        .id(settingsManager.settings.colorScheme)
     }
     
     // MARK: - Obsługa wyboru z menu
@@ -145,12 +164,12 @@ struct ContentView: View {
     private var songList: some View {
         List {
             ForEach(filteredSongs) { song in
-                NavigationLink(destination: LazyView(SongDetailView(store: store, song: song))) {
-                    SongRowView(song: song)
+                NavigationLink(value: song.id) {
+                    SongRowView(song: song, colorScheme: effectiveScheme)
                 }
                 .listRowBackground(
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(AppTheme.cardBackground(for: colorScheme))
+                        .fill(AppTheme.cardBackground(for: effectiveScheme))
                         .padding(.vertical, 3)
                         .padding(.horizontal, 12)
                 )
@@ -176,10 +195,10 @@ struct ContentView: View {
             Text("Brak piosenek")
                 .font(.title2)
                 .fontWeight(.semibold)
-                .foregroundStyle(AppTheme.primaryText(for: colorScheme))
+                .foregroundStyle(AppTheme.primaryText(for: effectiveScheme))
             Text("Dotknij + aby dodać pierwszą piosenkę")
                 .font(.subheadline)
-                .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
+                .foregroundStyle(AppTheme.secondaryText(for: effectiveScheme))
         }
     }
     
@@ -187,12 +206,12 @@ struct ContentView: View {
         VStack(spacing: 16) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 40))
-                .foregroundStyle(AppTheme.secondaryText(for: colorScheme).opacity(0.5))
+                .foregroundStyle(AppTheme.secondaryText(for: effectiveScheme).opacity(0.5))
             
             if searchText.isEmpty && selectedTag != nil {
                 Text("Brak piosenek z tagiem: \(selectedTag!)")
                     .font(.subheadline)
-                    .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
+                    .foregroundStyle(AppTheme.secondaryText(for: effectiveScheme))
                 
                 Button {
                     withAnimation { selectedTag = nil }
@@ -204,7 +223,7 @@ struct ContentView: View {
             } else {
                 Text("Brak wyników")
                     .font(.subheadline)
-                    .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
+                    .foregroundStyle(AppTheme.secondaryText(for: effectiveScheme))
             }
         }
     }
@@ -246,23 +265,10 @@ struct EdgeSwipeArea: UIViewRepresentable {
     }
 }
 
-/// UIView który łapie tylko gesty przy lewej krawędzi
 final class EdgeSwipeView: UIView {
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         return point.x < 25
     }
-}
-
-// MARK: - Lazy loading widoków
-
-struct LazyView<Content: View>: View {
-    let build: () -> Content
-    
-    init(_ build: @autoclosure @escaping () -> Content) {
-        self.build = build
-    }
-    
-    var body: Content { build() }
 }
 
 // MARK: - Pasek filtrów tagów
@@ -271,7 +277,7 @@ struct TagFilterBar: View {
     let tags: [String]
     @Binding var selectedTag: String?
     let songCounts: [String: Int]
-    @Environment(\.colorScheme) private var colorScheme
+    let colorScheme: ColorScheme
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -279,7 +285,8 @@ struct TagFilterBar: View {
                 TagChip(
                     label: "Wszystkie",
                     count: nil,
-                    isSelected: selectedTag == nil
+                    isSelected: selectedTag == nil,
+                    colorScheme: colorScheme
                 ) {
                     withAnimation(.easeInOut(duration: 0.2)) { selectedTag = nil }
                 }
@@ -288,7 +295,8 @@ struct TagFilterBar: View {
                     TagChip(
                         label: tag,
                         count: songCounts[tag],
-                        isSelected: selectedTag == tag
+                        isSelected: selectedTag == tag,
+                        colorScheme: colorScheme
                     ) {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             selectedTag = selectedTag == tag ? nil : tag
@@ -306,8 +314,8 @@ struct TagChip: View {
     let label: String
     let count: Int?
     let isSelected: Bool
+    let colorScheme: ColorScheme
     let action: () -> Void
-    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         Button(action: action) {
@@ -345,7 +353,7 @@ struct TagChip: View {
 
 struct SongRowView: View {
     let song: Song
-    @Environment(\.colorScheme) private var colorScheme
+    let colorScheme: ColorScheme
 
     var body: some View {
         HStack(spacing: 16) {

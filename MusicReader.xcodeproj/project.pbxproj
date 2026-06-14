@@ -287,6 +287,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MusicReader/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ChordScoller;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "hordScroller potrzebuje dostępu do mikrofonu, aby działał stroik gitarowy.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -334,6 +335,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MusicReader/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ChordScoller;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "hordScroller potrzebuje dostępu do mikrofonu, aby działał stroik gitarowy.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

@@ -3,12 +3,20 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var settingsManager = SettingsManager.shared
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorScheme) private var systemColorScheme
+    
+    // Obliczany na bieżąco — reaguje natychmiast na zmianę w settingsManager
+    private var effectiveScheme: ColorScheme {
+        AppTheme.resolveColorScheme(
+            appScheme: settingsManager.settings.colorScheme,
+            systemScheme: systemColorScheme
+        )
+    }
     
     var body: some View {
         NavigationStack {
             ZStack {
-                AppTheme.background(for: colorScheme)
+                AppTheme.background(for: effectiveScheme)
                     .ignoresSafeArea()
                 
                 ScrollView {
@@ -18,7 +26,7 @@ struct SettingsView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Motyw kolorystyczny")
                                     .font(.subheadline)
-                                    .foregroundStyle(AppTheme.primaryText(for: colorScheme))
+                                    .foregroundStyle(AppTheme.primaryText(for: effectiveScheme))
                                 
                                 HStack(spacing: 12) {
                                     ForEach(AppColorScheme.allCases, id: \.self) { scheme in
@@ -35,7 +43,7 @@ struct SettingsView: View {
                                 
                                 Text(colorSchemeDescription)
                                     .font(.caption)
-                                    .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
+                                    .foregroundStyle(AppTheme.secondaryText(for: effectiveScheme))
                                     .padding(.top, 4)
                             }
                         }
@@ -46,7 +54,7 @@ struct SettingsView: View {
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text("Po ręcznym przewinięciu:")
                                         .font(.subheadline)
-                                        .foregroundStyle(AppTheme.primaryText(for: colorScheme))
+                                        .foregroundStyle(AppTheme.primaryText(for: effectiveScheme))
                                     
                                     Picker("Zachowanie", selection: $settingsManager.settings.stopScrollOnManualScroll) {
                                         Text("Zatrzymaj auto-scroll").tag(true)
@@ -58,19 +66,19 @@ struct SettingsView: View {
                                          ? "Przewijanie automatyczne zatrzyma się gdy przewiniesz ręcznie. Naciśnij play aby wznowić."
                                          : "Przewijanie automatyczne będzie kontynuowane od nowej pozycji po ręcznym przewinięciu.")
                                         .font(.caption)
-                                        .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
+                                        .foregroundStyle(AppTheme.secondaryText(for: effectiveScheme))
                                 }
                                 
-                                Divider().background(AppTheme.separator(for: colorScheme))
+                                Divider().background(AppTheme.separator(for: effectiveScheme))
                                 
                                 Toggle(isOn: $settingsManager.settings.keepScreenAwake) {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("Nie wyłączaj ekranu")
                                             .font(.subheadline)
-                                            .foregroundStyle(AppTheme.primaryText(for: colorScheme))
+                                            .foregroundStyle(AppTheme.primaryText(for: effectiveScheme))
                                         Text("Ekran pozostanie włączony podczas telepromptera")
                                             .font(.caption)
-                                            .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
+                                            .foregroundStyle(AppTheme.secondaryText(for: effectiveScheme))
                                     }
                                 }
                                 .tint(.orange)
@@ -81,18 +89,18 @@ struct SettingsView: View {
                         settingsSection(title: "Informacje", icon: "info.circle") {
                             VStack(spacing: 12) {
                                 HStack {
-                                    Text("Wersja aplikacji").foregroundStyle(AppTheme.primaryText(for: colorScheme))
+                                    Text("Wersja aplikacji").foregroundStyle(AppTheme.primaryText(for: effectiveScheme))
                                     Spacer()
-                                    Text("1.0.0").foregroundStyle(AppTheme.secondaryText(for: colorScheme))
+                                    Text("1.0.0").foregroundStyle(AppTheme.secondaryText(for: effectiveScheme))
                                 }
                                 .font(.subheadline)
                                 
-                                Divider().background(AppTheme.separator(for: colorScheme))
+                                Divider().background(AppTheme.separator(for: effectiveScheme))
                                 
                                 HStack {
-                                    Text("Akordy w bazie").foregroundStyle(AppTheme.primaryText(for: colorScheme))
+                                    Text("Akordy w bazie").foregroundStyle(AppTheme.primaryText(for: effectiveScheme))
                                     Spacer()
-                                    Text("50+").foregroundStyle(AppTheme.secondaryText(for: colorScheme))
+                                    Text("50+").foregroundStyle(AppTheme.secondaryText(for: effectiveScheme))
                                 }
                                 .font(.subheadline)
                             }
@@ -128,6 +136,9 @@ struct SettingsView: View {
                 }
             }
         }
+        // Wymuszenie pełnego przerysowania przy zmianie motywu
+        .preferredColorScheme(settingsManager.settings.colorScheme.colorScheme)
+        .id(settingsManager.settings.colorScheme)
     }
     
     private var colorSchemeDescription: String {
@@ -154,7 +165,7 @@ struct SettingsView: View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(AppTheme.cardBackground(for: colorScheme))
+                    .fill(AppTheme.cardBackground(for: effectiveScheme))
             )
         }
     }

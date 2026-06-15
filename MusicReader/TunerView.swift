@@ -53,7 +53,7 @@ struct TunerView: View {
                         .padding(.bottom, 8)
                 }
             }
-            .navigationTitle("Stroik")
+            .navigationTitle(L10n.tuner.localized())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -61,7 +61,7 @@ struct TunerView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 14, weight: .semibold))
-                            Text("Wróć")
+                            Text(L10n.back.localized())
                                 .font(.system(size: 16))
                         }
                         .foregroundStyle(.orange)
@@ -96,9 +96,9 @@ struct TunerView: View {
         HStack(spacing: 6) {
             Image(systemName: "lock.fill")
                 .font(.system(size: 11))
-            Text("Tryb ręczny: \(lockedString?.note ?? "")")
+            Text(L10n.manualMode(lockedString?.note ?? ""))
                 .font(.system(size: 12, weight: .medium))
-            Text("• dotknij strunę aby odblokować")
+            Text(L10n.tapToUnlock.localized())
                 .font(.system(size: 11))
                 .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
         }
@@ -125,7 +125,7 @@ struct TunerView: View {
                 .contentTransition(.numericText())
                 .animation(.easeInOut(duration: 0.1), value: note.name)
             
-            Text("oktawa \(note.octave)")
+            Text(L10n.octave(note.octave))
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
             
@@ -152,14 +152,14 @@ struct TunerView: View {
                 .foregroundStyle(.orange.opacity(0.4))
                 .symbolEffect(.pulse)
             
-            Text("Zagraj dźwięk…")
+            Text(L10n.playSound.localized())
                 .font(.title3)
                 .fontWeight(.semibold)
                 .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
             
             Text(lockedString != nil
-                 ? "Strój strunę \(lockedString!.note)"
-                 : "Lub wybierz strunę poniżej")
+                 ? L10n.tuneString(lockedString!.note)
+                 : L10n.orSelectString.localized())
                 .font(.caption)
                 .foregroundStyle(AppTheme.secondaryText(for: colorScheme).opacity(0.6))
         }
@@ -173,12 +173,12 @@ struct TunerView: View {
                 .font(.system(size: 56))
                 .foregroundStyle(.red.opacity(0.5))
             
-            Text("Brak dostępu do mikrofonu")
+            Text(L10n.noMicrophoneAccess.localized())
                 .font(.title3)
                 .fontWeight(.semibold)
                 .foregroundStyle(AppTheme.primaryText(for: colorScheme))
             
-            Text("Włącz mikrofon w Ustawieniach iPhone'a")
+            Text(L10n.enableMicInSettings.localized())
                 .font(.subheadline)
                 .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                 .multilineTextAlignment(.center)
@@ -188,7 +188,7 @@ struct TunerView: View {
                     UIApplication.shared.open(url)
                 }
             } label: {
-                Text("Otwórz Ustawienia")
+                Text(L10n.openSettings.localized())
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(.black)
@@ -238,7 +238,7 @@ struct TunerView: View {
             }
             .padding(.horizontal, 16)
             
-            Text("Dotknij strunę aby ją wybrać ręcznie")
+            Text(L10n.tapStringToSelect.localized())
                 .font(.system(size: 10))
                 .foregroundStyle(AppTheme.secondaryText(for: colorScheme).opacity(0.5))
         }
@@ -309,7 +309,7 @@ struct TunerView: View {
     }
     
     private func centsText(_ cents: Float) -> String {
-        if abs(cents) < 1 { return "✓ czysto" }
+        if abs(cents) < 1 { return L10n.inTune.localized() }
         let sign = cents > 0 ? "+" : ""
         return "\(sign)\(Int(cents)) ¢"
     }

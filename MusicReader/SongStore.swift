@@ -24,9 +24,9 @@ struct Song: Identifiable, Codable {
     
     var capoDisplayText: String {
         if let capo = capo, capo > 0 {
-            return "\(capo). próg"
+            return L10n.capoFret(capo)
         }
-        return "Brak"
+        return L10n.none.localized()
     }
 }
 
@@ -39,20 +39,12 @@ class SongStore: ObservableObject {
         load()
         if songs.isEmpty {
             let example = Song(
-                title: "Przykładowa piosenka",
-                content: """
-[G]Dzisiaj jest piękny [C]dzień
-[D]Słońce świeci [G]znów
-[Em]Wiatr gra na [Am]strunach drzew
-[D]I śpiewa mi [G]w ucho
-
-[G]La la la [C]la la
-[D]La la la [G]la
-""",
+                title: L10n.exampleSongTitle.localized(),
+                content: L10n.exampleSongContent.localized(),
                 scrollSpeed: 40,
                 fontSize: 22,
                 capo: nil,
-                tags: ["Przykłady"]
+                tags: [L10n.exampleTag.localized()]
             )
             songs.append(example)
             save()

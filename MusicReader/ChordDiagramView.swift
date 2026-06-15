@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ChordDiagramView: View {
-    let chord: ChordDefinition  
+    let chord: ChordDefinition
     let size: CGFloat
     @Environment(\.colorScheme) private var colorScheme
     
@@ -193,7 +193,7 @@ struct UnknownChordView: View {
                     Image(systemName: "questionmark")
                         .font(.system(size: size * 0.2))
                         .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
-                    Text("Brak diagramu")
+                    Text(L10n.noDiagram.localized())
                         .font(.system(size: size * 0.08))
                         .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                 }
@@ -215,7 +215,7 @@ struct UnknownChordView: View {
 //    let isSelected: Bool
 //    let action: () -> Void
 //    @Environment(\.colorScheme) private var colorScheme
-//    
+//
 //    var body: some View {
 //        Button(action: action) {
 //            Text(chordName)

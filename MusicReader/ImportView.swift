@@ -32,10 +32,10 @@ struct ImportView: View {
                             Image(systemName: "arrow.down.circle.fill")
                                 .font(.system(size: 48))
                                 .foregroundStyle(.orange)
-                            Text("Importuj piosenkę")
+                            Text(L10n.importSongTitle.localized())
                                 .font(.title2).fontWeight(.bold)
                                 .foregroundStyle(AppTheme.primaryText(for: colorScheme))
-                            Text("Wspierane strony:")
+                            Text(L10n.supportedSites.localized())
                                 .font(.caption)
                                 .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                             
@@ -48,14 +48,14 @@ struct ImportView: View {
 
                         // Pole URL
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Wklej link do piosenki")
+                            Text(L10n.pasteLink.localized())
                                 .font(.caption).fontWeight(.semibold)
                                 .foregroundStyle(.orange)
 
                             HStack(spacing: 10) {
                                 Image(systemName: "link")
                                     .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
-                                TextField("https://...", text: $urlText)
+                                TextField(L10n.urlPlaceholder.localized(), text: $urlText)
                                     .foregroundStyle(AppTheme.primaryText(for: colorScheme))
                                     .keyboardType(.URL)
                                     .autocorrectionDisabled()
@@ -85,12 +85,12 @@ struct ImportView: View {
                             )
 
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("Przykłady:")
+                                Text(L10n.examples.localized())
                                     .font(.caption2)
                                     .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                                 
-                                ExampleURLView(url: "spiewnik.wywrota.pl/piosenka/tytul", description: "Wywrota", colorScheme: colorScheme)
-                                ExampleURLView(url: "tabs.ultimate-guitar.com/tab/artysta/piosenka-chords-123456", description: "Ultimate Guitar (Chords)", colorScheme: colorScheme)
+                                ExampleURLView(url: L10n.exampleURLWywrota.localized(), description: "Wywrota", colorScheme: colorScheme)
+                                ExampleURLView(url: L10n.exampleURLUG.localized(), description: "Ultimate Guitar (Chords)", colorScheme: colorScheme)
                             }
                         }
 
@@ -102,7 +102,7 @@ struct ImportView: View {
                                 } else {
                                     Image(systemName: "arrow.down.circle")
                                 }
-                                Text(isLoading ? "Pobieranie…" : "Importuj")
+                                Text(isLoading ? L10n.importing.localized() : L10n.importButton.localized())
                                     .fontWeight(.semibold)
                             }
                             .foregroundStyle(.black)
@@ -139,7 +139,7 @@ struct ImportView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Anuluj") { dismiss() }
+                    Button(L10n.cancel.localized()) { dismiss() }
                         .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                 }
             }
@@ -169,7 +169,7 @@ struct ImportView: View {
         }
         
         guard url.hasPrefix("http") else {
-            importState = .error("Podaj prawidłowy adres URL")
+            importState = .error(L10n.invalidURL.localized())
             return
         }
         
@@ -177,7 +177,7 @@ struct ImportView: View {
         let isUG = url.contains("ultimate-guitar.com") || url.contains("ultimateguitar.com")
         
         guard isWywrota || isUG else {
-            importState = .error("Nieobsługiwana strona.\n\nWspierane:\n• spiewnik.wywrota.pl\n• tabs.ultimate-guitar.com")
+            importState = .error(L10n.unsupportedSite.localized())
             return
         }
         
@@ -246,7 +246,7 @@ struct SongImportPreviewCard: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.title3)
-                Text("Znaleziono!").fontWeight(.semibold).foregroundStyle(.green)
+                Text(L10n.found.localized()).fontWeight(.semibold).foregroundStyle(.green)
                 Spacer()
             }
             
@@ -262,16 +262,16 @@ struct SongImportPreviewCard: View {
             
             HStack(spacing: 16) {
                 let lineCount = song.content.components(separatedBy: "\n").count
-                Label("\(lineCount) linii", systemImage: "text.alignleft")
+                Label(L10n.linesCount(lineCount), systemImage: "text.alignleft")
                 if let capo = song.capo {
-                    Label("Capo: \(capo)", systemImage: "guitars")
+                    Label(L10n.capoValue(capo), systemImage: "guitars")
                 }
             }
             .font(.caption)
             .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
             
             Button(action: onSave) {
-                Label("Dodaj do biblioteki", systemImage: "plus.circle.fill")
+                Label(L10n.addToLibrary.localized(), systemImage: "plus.circle.fill")
                     .fontWeight(.semibold).foregroundStyle(.black)
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Color.orange))
@@ -290,13 +290,13 @@ struct TipsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Wskazówki", systemImage: "lightbulb")
+            Label(L10n.tips.localized(), systemImage: "lightbulb")
                 .font(.caption).fontWeight(.semibold).foregroundStyle(.orange.opacity(0.8))
             
             VStack(alignment: .leading, spacing: 8) {
-                TipRow(icon: "hand.tap", text: "Na Ultimate Guitar wybierz wersję \"Chords\" (nie \"Tab\")", colorScheme: colorScheme)
-                TipRow(icon: "star", text: "Wybieraj wersje z wysoką oceną ★★★★★", colorScheme: colorScheme)
-                TipRow(icon: "pencil", text: "Po imporcie możesz edytować tekst i akordy", colorScheme: colorScheme)
+                TipRow(icon: "hand.tap", text: L10n.tipUGChords.localized(), colorScheme: colorScheme)
+                TipRow(icon: "star", text: L10n.tipHighRating.localized(), colorScheme: colorScheme)
+                TipRow(icon: "pencil", text: L10n.tipEditAfterImport.localized(), colorScheme: colorScheme)
             }
         }
         .padding(16)

@@ -3,10 +3,17 @@ import SwiftUI
 // MARK: - Opcje menu bocznego
 
 enum ToolMenuItem: String, Identifiable {
-    case tuner    = "Stroik"
-    case settings = "Ustawienia"
+    case tuner
+    case settings
     
     var id: String { rawValue }
+    
+    var displayName: String {
+        switch self {
+        case .tuner:    return L10n.tuner.localized()
+        case .settings: return L10n.settings.localized()
+        }
+    }
     
     var icon: String {
         switch self {
@@ -24,8 +31,8 @@ enum ToolMenuItem: String, Identifiable {
     
     var subtitle: String {
         switch self {
-        case .tuner:    return "Nastrojenie gitary"
-        case .settings: return "Motyw, teleprompter"
+        case .tuner:    return L10n.tunerSubtitle.localized()
+        case .settings: return L10n.settingsSubtitle.localized()
         }
     }
     
@@ -169,7 +176,7 @@ struct ToolPanelView: View {
                     .frame(width: 28)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.rawValue)
+                    Text(item.displayName)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(AppTheme.primaryText(for: colorScheme))
                     

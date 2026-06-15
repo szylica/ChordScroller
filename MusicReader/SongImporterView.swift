@@ -8,34 +8,38 @@ final class SongWebViewController: UIViewController, WKNavigationDelegate {
     var onResult: ((Result<Song, Error>) -> Void)?
     private var webView: WKWebView!
     private var hasReported = false
-    private var retryCount = 0
+    private var retryCount  = 0
     private var currentURL: String?
     private var siteType: SiteType = .unknown
 
     enum SiteType { case wywrota, ultimateGuitar, unknown }
 
+    // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
-        
+
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences.allowsContentJavaScript = true
-        
+
         webView = WKWebView(frame: view.bounds, configuration: config)
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         webView.navigationDelegate = self
         webView.isOpaque = false
         webView.backgroundColor = .black
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
-        
+
         view.addSubview(webView)
     }
 
+    // MARK: - Public
+
     func load(urlString: String) {
         guard urlString != currentURL else { return }
-        currentURL = urlString
+        currentURL  = urlString
         hasReported = false
-        retryCount = 0
+        retryCount  = 0
 
         if urlString.contains("wywrota.pl") {
             siteType = .wywrota
@@ -46,12 +50,14 @@ final class SongWebViewController: UIViewController, WKNavigationDelegate {
         }
 
         guard let url = URL(string: urlString) else {
-            report(.failure(ImportError.parseError("Nieprawidłowy URL")))
+            report(.failure(ImportError.parseError(L10n.invalidURL.localized())))
             return
         }
-        
+
         webView.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData))
     }
+
+    // MARK: - WKNavigationDelegate
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         let delay: TimeInterval = siteType == .ultimateGuitar ? 2.0 : 0.5
@@ -59,12 +65,14 @@ final class SongWebViewController: UIViewController, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        report(.failure(ImportError.parseError("Błąd ładowania: \(error.localizedDescription)")))
+        report(.failure(ImportError.parseError(L10n.loadingErrorWith(error.localizedDescription))))
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation nav: WKNavigation!, withError error: Error) {
-        report(.failure(ImportError.parseError("Brak połączenia lub nieprawidłowy URL.")))
+        report(.failure(ImportError.parseError(L10n.noConnectionOrInvalidURL.localized())))
     }
+
+    // MARK: - Extraction
 
     private func scheduleExtract(delay: TimeInterval) {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
@@ -74,9 +82,9 @@ final class SongWebViewController: UIViewController, WKNavigationDelegate {
 
     private func tryExtract() {
         switch siteType {
-        case .wywrota:       extractWywrota()
+        case .wywrota:        extractWywrota()
         case .ultimateGuitar: extractUltimateGuitar()
-        case .unknown:       report(.failure(ImportError.parseError("Nieobsługiwana strona")))
+        case .unknown:        report(.failure(ImportError.parseError(L10n.unsupportedSite.localized())))
         }
     }
 
@@ -86,14 +94,9 @@ final class SongWebViewController: UIViewController, WKNavigationDelegate {
         let js = """
         (function(){
             var result = { content: '', capo: null, fullText: '' };
-            
-            // Pełny tekst strony do szukania capo
             result.fullText = document.body.innerText || '';
-            
-            // Wyciągnij treść
             var lines = document.querySelectorAll('span.annotated-lyrics');
             if (!lines.length) return JSON.stringify(result);
-            
             var content = [];
             function processNode(node) {
                 var out = '';
@@ -116,33 +119,37 @@ final class SongWebViewController: UIViewController, WKNavigationDelegate {
             return JSON.stringify(result);
         })();
         """
-        
-        webView.evaluateJavaScript(js) { [weak self] result, error in
-            guard let self = self else { return }
-            
+
+        webView.evaluateJavaScript(js) { [weak self] result, _ in
+            guard let self else { return }
+
             if let jsonStr = result as? String,
-               let data = jsonStr.data(using: .utf8),
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                
-                let content = json["content"] as? String ?? ""
+               let data    = jsonStr.data(using: .utf8),
+               let json    = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+
+                let content  = json["content"]  as? String ?? ""
                 let fullText = json["fullText"] as? String ?? ""
-                
-                // Szukaj capo w pełnym tekście strony
-                let capo = CapoExtractor.extract(from: fullText) ?? CapoExtractor.extract(from: content)
-                
+                let capo     = CapoExtractor.extract(from: fullText) ?? CapoExtractor.extract(from: content)
+
                 if content.count > 20 {
-                    let title = self.cleanWywrotaTitle(self.webView.title ?? "Importowana piosenka")
+                    let title = self.cleanWywrotaTitle(self.webView.title ?? L10n.importedSong.localized())
                     let cleanedContent = CapoExtractor.removeCapoLines(from: content)
-                    self.report(.success(Song(title: title, content: cleanedContent, scrollSpeed: 40, fontSize: 22, capo: capo)))
+                    self.report(.success(Song(
+                        title:       title,
+                        content:     cleanedContent,
+                        scrollSpeed: 40,
+                        fontSize:    22,
+                        capo:        capo
+                    )))
                     return
                 }
             }
-            
+
             if self.retryCount < 6 {
                 self.retryCount += 1
                 self.scheduleExtract(delay: 0.5)
             } else {
-                self.report(.failure(ImportError.notFound("Nie znaleziono treści piosenki na Wywrocie.")))
+                self.report(.failure(ImportError.notFound(L10n.songNotFoundWywrota.localized())))
             }
         }
     }
@@ -179,9 +186,10 @@ final class SongWebViewController: UIViewController, WKNavigationDelegate {
             return '';
         })();
         """
-        
-        webView.evaluateJavaScript(js) { [weak self] result, error in
-            guard let self = self else { return }
+
+        webView.evaluateJavaScript(js) { [weak self] result, _ in
+            guard let self else { return }
+
             if let json = result as? String, json.count > 100 {
                 do {
                     let song = try UltimateGuitarParser.parse(json: json)
@@ -198,17 +206,17 @@ final class SongWebViewController: UIViewController, WKNavigationDelegate {
                 self.retryCount += 1
                 self.scheduleExtract(delay: 1.5)
             } else {
-                self.report(.failure(ImportError.notFound(
-                    "Nie udało się odczytać danych z Ultimate Guitar.\nUpewnij się że link prowadzi do strony z akordami (Chords)."
-                )))
+                self.report(.failure(ImportError.notFound(L10n.couldNotReadUG.localized())))
             }
         }
     }
 
+    // MARK: - Report result
+
     private func report(_ result: Result<Song, Error>) {
         guard !hasReported else { return }
         hasReported = true
-        currentURL = nil
+        currentURL  = nil
         DispatchQueue.main.async { self.onResult?(result) }
     }
 }
@@ -236,8 +244,7 @@ struct SongImporterView: UIViewControllerRepresentable {
 // MARK: - Uniwersalny ekstraktor Capo
 
 struct CapoExtractor {
-    
-    /// Słownik liczebników
+
     private static let wordToNumber: [String: Int] = [
         // Polski
         "pierwszym": 1, "pierwszy": 1, "pierwsza": 1, "pierwszej": 1, "1szy": 1, "1szym": 1,
@@ -252,8 +259,7 @@ struct CapoExtractor {
         "dziesiątym": 10, "dziesiąty": 10, "dziesiąta": 10, "dziesiątej": 10, "10ty": 10, "10tym": 10,
         "jedenastym": 11, "jedenasty": 11, "jedenasta": 11, "jedenastej": 11, "11ty": 11, "11tym": 11,
         "dwunastym": 12, "dwunasty": 12, "dwunasta": 12, "dwunastej": 12, "12ty": 12, "12tym": 12,
-        
-        // Angielski
+        // English
         "first": 1, "1st": 1,
         "second": 2, "2nd": 2,
         "third": 3, "3rd": 3,
@@ -266,112 +272,71 @@ struct CapoExtractor {
         "tenth": 10, "10th": 10,
         "eleventh": 11, "11th": 11,
         "twelfth": 12, "12th": 12,
-        
-        // Rzymskie
+        // Roman
         "i": 1, "ii": 2, "iii": 3, "iv": 4, "v": 5,
         "vi": 6, "vii": 7, "viii": 8, "ix": 9, "x": 10,
         "xi": 11, "xii": 12,
     ]
-    
-    /// Główna funkcja - wyciąga numer capo z tekstu
+
     static func extract(from text: String) -> Int? {
         let lowercased = text.lowercased()
-        
-        // Lista wzorców regex - od najbardziej specyficznych do ogólnych
+
         let patterns: [(pattern: String, numberGroup: Int)] = [
-            // === POLSKIE ===
-            // "Kapodaster na 3 progu", "kapodaster na trzecim progu"
             (#"kapodaster\s*(?:na|:)?\s*(\d+)\.?\s*progi?e?u?"#, 1),
             (#"kapodaster\s*(?:na|:)?\s*(\w+)\s*progi?e?u?"#, 1),
-            
-            // "Capo na 3 progu", "capo: 3 próg"
             (#"capo\s*(?:na|:)?\s*(\d+)\.?\s*progi?e?u?"#, 1),
             (#"capo\s*(?:na|:)?\s*(\w+)\s*progi?e?u?"#, 1),
-            
-            // "Capo 3", "Capo: 3", "Capo - 3"
             (#"capo\s*[:\-–—]?\s*(\d+)"#, 1),
-            
-            // "Kapodaster 3", "Kapodaster: 3"
             (#"kapodaster\s*[:\-–—]?\s*(\d+)"#, 1),
-            
-            // "kapo 3", "kapo: 3" (skrót)
             (#"kapo\s*[:\-–—]?\s*(\d+)"#, 1),
-            
-            // "3 próg", "na 3 progu"
             (#"(?:na\s+)?(\d+)\.?\s*progi?e?u?"#, 1),
-            
-            // === ANGIELSKIE ===
-            // "Capo: 1st fret", "Capo on 2nd fret", "Capo 3rd fret"
             (#"capo\s*[:\-–—]?\s*(?:on\s+)?(\d+)(?:st|nd|rd|th)?\s*fret"#, 1),
             (#"capo\s*[:\-–—]?\s*(?:on\s+)?(\w+)\s*fret"#, 1),
-            
-            // "Capo on 3", "Capo at 3"
             (#"capo\s+(?:on|at)\s+(\d+)"#, 1),
-            
-            // "Capo 1st", "Capo 2nd" (bez "fret")
             (#"capo\s*[:\-–—]?\s*(\d+)(?:st|nd|rd|th)"#, 1),
-            
-            // "fret 3", "3rd fret"
             (#"(\d+)(?:st|nd|rd|th)?\s*fret"#, 1),
-            
-            // "Capo III" (rzymskie)
             (#"capo\s*[:\-–—]?\s*(i{1,3}|iv|v|vi{0,3}|ix|x|xi{0,2})\b"#, 1),
-            
-            // === INNE WARIANTY ===
-            // "Put capo on 3"
             (#"put\s+capo\s+(?:on\s+)?(\d+)"#, 1),
-            
-            // "Use capo 3"
             (#"use\s+capo\s*(?:on\s+)?(\d+)"#, 1),
-            
-            // "with capo on 3"
             (#"with\s+capo\s+(?:on\s+)?(\d+)"#, 1),
-            
-            // "Capo required: 3"
             (#"capo\s+required\s*[:\-–—]?\s*(\d+)"#, 1),
-            
-            // Po prostu "capo" + liczba gdziekolwiek blisko
             (#"capo\W{0,3}(\d{1,2})\b"#, 1),
             (#"kapodaster\W{0,3}(\d{1,2})\b"#, 1),
         ]
-        
+
         for (pattern, group) in patterns {
-            if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
-               let match = regex.firstMatch(in: lowercased, range: NSRange(location: 0, length: lowercased.utf16.count)) {
-                
-                let groupRange = match.range(at: group)
-                if groupRange.location != NSNotFound {
-                    let captured = (lowercased as NSString).substring(with: groupRange)
-                    
-                    // Sprawdź czy to liczba
-                    if let number = Int(captured), number >= 1 && number <= 12 {
-                        return number
-                    }
-                    
-                    // Sprawdź czy to słowo/liczebnik
-                    if let number = wordToNumber[captured.lowercased()], number >= 1 && number <= 12 {
-                        return number
-                    }
-                }
+            guard
+                let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+                let match = regex.firstMatch(in: lowercased, range: NSRange(location: 0, length: lowercased.utf16.count))
+            else { continue }
+
+            let groupRange = match.range(at: group)
+            guard groupRange.location != NSNotFound else { continue }
+
+            let captured = (lowercased as NSString).substring(with: groupRange)
+
+            if let number = Int(captured), (1...12).contains(number) {
+                return number
+            }
+            if let number = wordToNumber[captured.lowercased()], (1...12).contains(number) {
+                return number
             }
         }
-        
+
         return nil
     }
-    
-    /// Usuwa linie zawierające informację o capo
+
     static func removeCapoLines(from text: String) -> String {
         let capoPatterns = [
             #"(?m)^.*\b[Cc]apo\b.*$\n?"#,
             #"(?m)^.*\b[Kk]apodaster\b.*$\n?"#,
             #"(?m)^.*\b[Kk]apo\b.*\bpro[gó]\b.*$\n?"#,
         ]
-        
+
         var result = text
         for pattern in capoPatterns {
             result = result.replacingOccurrences(of: pattern, with: "", options: .regularExpression)
         }
-        
         return result
     }
 }
@@ -379,15 +344,17 @@ struct CapoExtractor {
 // MARK: - Ultimate Guitar Parser
 
 struct UltimateGuitarParser {
-    
+
     static func parse(json jsonString: String) throws -> Song {
         let decodedJson = decodeHTMLEntities(jsonString)
-        
-        guard let data = decodedJson.data(using: .utf8),
-              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw ImportError.parseError("Nieprawidłowy format JSON z Ultimate Guitar")
+
+        guard
+            let data = decodedJson.data(using: .utf8),
+            let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else {
+            throw ImportError.parseError(L10n.invalidJsonUG.localized())
         }
-        
+
         // Znajdź treść
         let contentPaths: [[String]] = [
             ["store", "page", "data", "tab_view", "wiki_tab", "content"],
@@ -395,65 +362,65 @@ struct UltimateGuitarParser {
             ["data", "tab_view", "wiki_tab", "content"],
             ["tab_view", "wiki_tab", "content"],
         ]
-        
+
         var rawContent = ""
         for path in contentPaths {
             if let c = dig(root, path: path) as? String, c.count > 10 {
-                rawContent = c; break
+                rawContent = c
+                break
             }
         }
-        
+
         // Znajdź metadane
         let tabPaths: [[String]] = [
             ["store", "page", "data", "tab"],
             ["page", "data", "tab"],
             ["data", "tab"],
         ]
-        
-        var songName = "Importowana piosenka"
+
+        var songName   = L10n.importedSong.localized()
         var artistName = ""
         for path in tabPaths {
             if let tab = dig(root, path: path) as? [String: Any] {
-                songName = tab["song_name"] as? String ?? songName
+                songName   = tab["song_name"]   as? String ?? songName
                 artistName = tab["artist_name"] as? String ?? ""
                 break
             }
         }
-        
+
         let title = artistName.isEmpty ? songName : "\(artistName) – \(songName)"
-        
+
         guard !rawContent.isEmpty else {
-            throw ImportError.notFound("Nie znaleziono treści akordów.\nUpewnij się że link prowadzi do strony typu 'Chords'.")
+            throw ImportError.notFound(L10n.chordsNotFoundUG.localized())
         }
-        
-        // Wyciągnij capo z treści
-        let capo = CapoExtractor.extract(from: rawContent)
-        
+
+        let capo    = CapoExtractor.extract(from: rawContent)
         let content = convertUGContent(rawContent)
+
         guard content.count > 10 else {
-            throw ImportError.notFound("Nie udało się przetworzyć treści piosenki.")
+            throw ImportError.notFound(L10n.couldNotProcessSong.localized())
         }
-        
+
         return Song(title: title, content: content, scrollSpeed: 40, fontSize: 22, capo: capo)
     }
-    
+
     // MARK: - Konwersja formatu UG
-    
+
     static func convertUGContent(_ input: String) -> String {
         var text = input
-        
+
         // 1. Zamień [ch]Akord[/ch] na tymczasowy marker {{Akord}}
         text = text.replacingOccurrences(
-            of: #"\[ch\]([^\[]+)\[/ch\]"#,
+            of:   #"\[ch\]([^\[]+)\[/ch\]"#,
             with: "{{$1}}",
             options: .regularExpression
         )
-        
+
         // 2. Usuń tagi [tab]/[/tab] ale ZACHOWAJ zawartość
-        text = text.replacingOccurrences(of: "[tab]", with: "")
+        text = text.replacingOccurrences(of: "[tab]",  with: "")
         text = text.replacingOccurrences(of: "[/tab]", with: "")
-        
-        // 3. Zamień sekcje na nagłówki
+
+        // 3. Zamień sekcje na markery tymczasowe
         let sectionMappings: [(String, String)] = [
             (#"\[Intro\]"#,                "§INTRO§"),
             (#"\[Verse[^\]]*\]"#,          "§VERSE§"),
@@ -471,63 +438,64 @@ struct UltimateGuitarParser {
         for (pattern, marker) in sectionMappings {
             text = text.replacingOccurrences(of: pattern, with: marker, options: [.regularExpression, .caseInsensitive])
         }
-        
+
         // 4. Usuń inne tagi [...]
         text = text.replacingOccurrences(of: #"\[[^\]]*\]"#, with: "", options: .regularExpression)
-        
+
         // 5. Zamień markery akordów {{Akord}} na [Akord]
         text = text.replacingOccurrences(
-            of: #"\{\{([^}]+)\}\}"#,
+            of:   #"\{\{([^}]+)\}\}"#,
             with: "[$1]",
             options: .regularExpression
         )
-        
+
         // 6. Usuń linie z informacją o capo
         text = CapoExtractor.removeCapoLines(from: text)
-        
+
         // 7. Normalizuj newlines
         text = text.replacingOccurrences(of: "\r\n", with: "\n")
-        text = text.replacingOccurrences(of: "\r", with: "\n")
-        
+        text = text.replacingOccurrences(of: "\r",   with: "\n")
+
         // 8. Podziel na linie i połącz linie akordów z liniami tekstu
-        let lines = text.components(separatedBy: "\n")
+        let lines  = text.components(separatedBy: "\n")
         let merged = mergeChordAndLyricLines(lines)
-        
-        // 9. Zamień markery sekcji na czytelne nagłówki
-        let sectionLabels: [(String, String)] = [
-            ("§INTRO§",        "🎸 Intro"),
-            ("§VERSE§",        "📝 Zwrotka"),
-            ("§CHORUS§",       "🎵 Refren"),
-            ("§BRIDGE§",       "🌉 Bridge"),
-            ("§PRECHORUS§",    "🎶 Pre-refren"),
-            ("§OUTRO§",        "🔚 Outro"),
-            ("§SOLO§",         "🎸 Solo"),
-            ("§INTERLUDE§",    "🎹 Interlude"),
-            ("§INSTRUMENTAL§", "🎼 Instrumental"),
-            ("§HOOK§",         "🪝 Hook"),
-            ("§CODA§",         "🔄 Coda"),
-            ("§BREAK§",        "⏸ Break"),
+
+        // 9. Zamień markery sekcji na czytelne nagłówki (zlokalizowane)
+        let sectionLabels: [(String, L10n)] = [
+            ("§INTRO§",        .sectionIntro),
+            ("§VERSE§",        .sectionVerse),
+            ("§CHORUS§",       .sectionChorus),
+            ("§BRIDGE§",       .sectionBridge),
+            ("§PRECHORUS§",    .sectionPrechorus),
+            ("§OUTRO§",        .sectionOutro),
+            ("§SOLO§",         .sectionSolo),
+            ("§INTERLUDE§",    .sectionInterlude),
+            ("§INSTRUMENTAL§", .sectionInstrumental),
+            ("§HOOK§",         .sectionHook),
+            ("§CODA§",         .sectionCoda),
+            ("§BREAK§",        .sectionBreak),
         ]
-        
+
         var result: [String] = []
         var emptyCount = 0
-        
+
         for line in merged {
             var processed = line.trimmingCharacters(in: .whitespaces)
-            
-            for (marker, label) in sectionLabels {
+
+            for (marker, l10nKey) in sectionLabels {
                 if processed.contains(marker) {
-                    processed = processed.replacingOccurrences(of: marker, with: "")
+                    processed = processed
+                        .replacingOccurrences(of: marker, with: "")
                         .trimmingCharacters(in: .whitespaces)
                     if !result.isEmpty && result.last != "" {
                         result.append("")
                     }
-                    result.append(label)
+                    result.append(l10nKey.localized())
                     emptyCount = 0
                     break
                 }
             }
-            
+
             if !sectionLabels.contains(where: { line.contains($0.0) }) {
                 if processed.isEmpty {
                     emptyCount += 1
@@ -538,24 +506,24 @@ struct UltimateGuitarParser {
                 }
             }
         }
-        
+
         return result.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
     }
-    
+
     // MARK: - Łączenie linii akordów z liniami tekstu
-    
+
     private static func mergeChordAndLyricLines(_ lines: [String]) -> [String] {
         var result: [String] = []
         var i = 0
-        
+
         while i < lines.count {
             let line = lines[i]
-            
+
             if isChordOnlyLine(line) {
                 if i + 1 < lines.count {
-                    let nextLine = lines[i + 1]
+                    let nextLine    = lines[i + 1]
                     let nextTrimmed = nextLine.trimmingCharacters(in: .whitespaces)
-                    
+
                     if !nextTrimmed.isEmpty && !isChordOnlyLine(nextLine) && !isSectionMarker(nextTrimmed) {
                         let merged = mergeTwoLines(chordLine: line, textLine: nextLine)
                         result.append(merged)
@@ -570,87 +538,85 @@ struct UltimateGuitarParser {
                 i += 1
             }
         }
-        
+
         return result
     }
-    
+
     private static func isChordOnlyLine(_ line: String) -> Bool {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
-        if trimmed.isEmpty { return false }
-        if isSectionMarker(trimmed) { return false }
-        
-        let withoutChords = trimmed.replacingOccurrences(
-            of: #"\[[^\]]+\]"#,
+        guard !trimmed.isEmpty, !isSectionMarker(trimmed) else { return false }
+
+        let withoutChords = trimmed
+            .replacingOccurrences(of: #"\[[^\]]+\]"#, with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+
+        let hasChord       = trimmed.range(of: #"\[[^\]]+\]"#, options: .regularExpression) != nil
+        let remainingClean = withoutChords.replacingOccurrences(
+            of: #"[|\-/\s\(\)x\d,\.%]+"#,
             with: "",
             options: .regularExpression
-        ).trimmingCharacters(in: .whitespaces)
-        
-        let hasChord = trimmed.range(of: #"\[[^\]]+\]"#, options: .regularExpression) != nil
-        let remainingClean = withoutChords.replacingOccurrences(of: #"[|\-/\s\(\)x\d,\.%]+"#, with: "", options: .regularExpression)
-        
+        )
+
         return hasChord && remainingClean.isEmpty
     }
-    
+
     private static func isSectionMarker(_ line: String) -> Bool {
         line.contains("§") && line.contains("§")
     }
-    
+
     private static func mergeTwoLines(chordLine: String, textLine: String) -> String {
-        let chordPattern = #"\[([^\]]+)\]"#
-        guard let regex = try? NSRegularExpression(pattern: chordPattern) else {
+        guard let regex = try? NSRegularExpression(pattern: #"\[([^\]]+)\]"#) else {
             return textLine
         }
-        
+
         var chordPositions: [(chord: String, visualPosition: Int)] = []
-        
+
         let nsChordLine = chordLine as NSString
         let matches = regex.matches(in: chordLine, range: NSRange(location: 0, length: nsChordLine.length))
-        
+
         var visualOffset = 0
-        var lastRawEnd = 0
-        
+        var lastRawEnd   = 0
+
         for match in matches {
             let gapStart = lastRawEnd
-            let gapEnd = match.range.location
-            let gap = nsChordLine.substring(with: NSRange(location: gapStart, length: gapEnd - gapStart))
-            
-            let pos = visualOffset + gap.count
+            let gapEnd   = match.range.location
+            let gap      = nsChordLine.substring(with: NSRange(location: gapStart, length: gapEnd - gapStart))
+
+            let pos       = visualOffset + gap.count
             let chordName = nsChordLine.substring(with: match.range(at: 1))
             chordPositions.append((chordName, pos))
-            
+
             visualOffset = pos + chordName.count
-            lastRawEnd = match.range.location + match.range.length
+            lastRawEnd   = match.range.location + match.range.length
         }
-        
-        if chordPositions.isEmpty {
-            return textLine
-        }
-        
+
+        guard !chordPositions.isEmpty else { return textLine }
+
         let textChars = Array(textLine)
-        var result = ""
-        var textIdx = 0
-        
+        var result    = ""
+        var textIdx   = 0
+
         for (chord, pos) in chordPositions {
             let targetPos = min(pos, textChars.count)
-            
+
             while textIdx < targetPos {
                 result.append(textChars[textIdx])
                 textIdx += 1
             }
-            
+
             result += "[\(chord)]"
         }
-        
+
         while textIdx < textChars.count {
             result.append(textChars[textIdx])
             textIdx += 1
         }
-        
+
         return result
     }
-    
+
     // MARK: - Helpers
-    
+
     private static func dig(_ obj: Any, path: [String]) -> Any? {
         var current: Any = obj
         for key in path {
@@ -664,7 +630,7 @@ struct UltimateGuitarParser {
         }
         return current
     }
-    
+
     private static func decodeHTMLEntities(_ str: String) -> String {
         var result = str
         let entities: [(String, String)] = [
@@ -683,11 +649,11 @@ struct UltimateGuitarParser {
 enum ImportError: LocalizedError {
     case parseError(String)
     case notFound(String)
-    
+
     var errorDescription: String? {
         switch self {
         case .parseError(let msg): return msg
-        case .notFound(let msg): return msg
+        case .notFound(let msg):   return msg
         }
     }
 }

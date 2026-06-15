@@ -39,12 +39,12 @@ struct EditorView: View {
                     VStack(spacing: 20) {
                         // Tytuł
                         VStack(alignment: .leading, spacing: 8) {
-                            Label("Tytuł", systemImage: "music.note")
+                            Label(L10n.title.localized(), systemImage: "music.note")
                                 .font(.caption)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.orange)
 
-                            TextField("Nazwa piosenki…", text: $title)
+                            TextField(L10n.songNamePlaceholder.localized(), text: $title)
                                 .font(.title3)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(AppTheme.primaryText(for: colorScheme))
@@ -57,7 +57,7 @@ struct EditorView: View {
                         
                         // Tagi
                         VStack(alignment: .leading, spacing: 8) {
-                            Label("Tagi", systemImage: "tag")
+                            Label(L10n.tags.localized(), systemImage: "tag")
                                 .font(.caption)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.orange)
@@ -95,7 +95,7 @@ struct EditorView: View {
                             
                             // Dodaj tag
                             HStack(spacing: 8) {
-                                TextField("Nowy tag…", text: $newTagText)
+                                TextField(L10n.newTagPlaceholder.localized(), text: $newTagText)
                                     .font(.subheadline)
                                     .foregroundStyle(AppTheme.primaryText(for: colorScheme))
                                     .padding(10)
@@ -124,7 +124,7 @@ struct EditorView: View {
                             let suggestions = store.allTags.filter { !tags.contains($0) }
                             if !suggestions.isEmpty {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text("Istniejące tagi:")
+                                    Text(L10n.existingTags.localized())
                                         .font(.caption2)
                                         .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                                     
@@ -154,12 +154,12 @@ struct EditorView: View {
                         // Kapodaster
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Label("Kapodaster", systemImage: "guitars")
+                                Label(L10n.capoLabel.localized(), systemImage: "guitars")
                                     .font(.caption)
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.orange)
                                 Spacer()
-                                Text(capo == 0 ? "Brak" : "\(capo). próg")
+                                Text(capo == 0 ? L10n.none.localized() : L10n.capoFret(capo))
                                     .font(.caption)
                                     .fontWeight(.bold)
                                     .foregroundStyle(.orange)
@@ -168,7 +168,7 @@ struct EditorView: View {
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
-                                    CapoButton(value: 0, label: "Brak", selected: capo == 0, colorScheme: colorScheme) {
+                                    CapoButton(value: 0, label: L10n.none.localized(), selected: capo == 0, colorScheme: colorScheme) {
                                         withAnimation { capo = 0 }
                                     }
                                     ForEach(1...12, id: \.self) { fret in
@@ -184,7 +184,7 @@ struct EditorView: View {
                         // Slajder tempa
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Label("Tempo przewijania", systemImage: "gauge.with.dots.needle.bottom.50percent")
+                                Label(L10n.scrollSpeed.localized(), systemImage: "gauge.with.dots.needle.bottom.50percent")
                                     .font(.caption)
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.orange)
@@ -197,18 +197,18 @@ struct EditorView: View {
                             }
 
                             HStack {
-                                Text("Wolno")
+                                Text(L10n.slow.localized())
                                     .font(.caption2)
                                     .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                                 Slider(value: $scrollSpeed, in: 10...200, step: 5)
                                     .tint(.orange)
-                                Text("Szybko")
+                                Text(L10n.fast.localized())
                                     .font(.caption2)
                                     .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                             }
 
                             HStack(spacing: 8) {
-                                ForEach([("Wolno", 20.0), ("Średnio", 50.0), ("Szybko", 90.0), ("Bardzo szybko", 140.0)], id: \.0) { label, speed in
+                                ForEach([(L10n.slow.localized(), 20.0), (L10n.medium.localized(), 50.0), (L10n.fast.localized(), 90.0), (L10n.veryFast.localized(), 140.0)], id: \.1) { label, speed in
                                     Button {
                                         withAnimation { scrollSpeed = speed }
                                     } label: {
@@ -229,7 +229,7 @@ struct EditorView: View {
                         // Slajder czcionki
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Label("Rozmiar czcionki", systemImage: "textformat.size")
+                                Label(L10n.fontSizeLabel.localized(), systemImage: "textformat.size")
                                     .font(.caption)
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.orange)
@@ -242,12 +242,12 @@ struct EditorView: View {
                             }
 
                             HStack {
-                                Text("Małe")
+                                Text(L10n.small.localized())
                                     .font(.caption2)
                                     .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                                 Slider(value: $fontSize, in: 12...48, step: 1)
                                     .tint(.orange)
-                                Text("Duże")
+                                Text(L10n.large.localized())
                                     .font(.caption2)
                                     .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                             }
@@ -256,12 +256,12 @@ struct EditorView: View {
                         // Edytor tekstu
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Label("Tekst i akordy", systemImage: "text.alignleft")
+                                Label(L10n.textAndChords.localized(), systemImage: "text.alignleft")
                                     .font(.caption)
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.orange)
                                 Spacer()
-                                Text("Akordy w [nawiasach]")
+                                Text(L10n.chordsInBrackets.localized())
                                     .font(.caption2)
                                     .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                             }
@@ -284,7 +284,7 @@ struct EditorView: View {
                         Button {
                             showingPreview = true
                         } label: {
-                            Label("Podgląd przewijania", systemImage: "eye")
+                            Label(L10n.previewScrolling.localized(), systemImage: "eye")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.orange)
@@ -300,15 +300,15 @@ struct EditorView: View {
                     .padding(.bottom, 40)
                 }
             }
-            .navigationTitle(existingSong == nil ? "Nowa piosenka" : "Edytuj")
+            .navigationTitle(existingSong == nil ? L10n.newSong.localized() : L10n.editSong.localized())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Anuluj") { dismiss() }
+                    Button(L10n.cancel.localized()) { dismiss() }
                         .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Zapisz") {
+                    Button(L10n.save.localized()) {
                         saveSong()
                     }
                     .fontWeight(.bold)
@@ -343,7 +343,7 @@ struct EditorView: View {
     private func saveSong() {
         var song = currentSong
         if song.title.trimmingCharacters(in: .whitespaces).isEmpty {
-            song.title = "Bez tytułu"
+            song.title = L10n.untitled.localized()
         }
         if existingSong != nil {
             store.update(song)
@@ -429,7 +429,7 @@ struct QuickChordsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Szybkie wstawianie")
+            Text(L10n.quickInsert.localized())
                 .font(.caption2)
                 .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
 

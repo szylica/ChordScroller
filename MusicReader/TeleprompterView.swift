@@ -384,7 +384,7 @@ struct TeleprompterView: View {
                 Spacer()
                 
                 VStack(spacing: 2) {
-                    Text(song.title.isEmpty ? "Bez tytułu" : song.title)
+                    Text(song.title.isEmpty ? L10n.untitled.localized() : song.title)
                         .font(.subheadline).fontWeight(.medium)
                         .foregroundStyle(textColor.opacity(0.85)).lineLimit(1)
                     
@@ -413,7 +413,7 @@ struct TeleprompterView: View {
                 // Tempo
                 VStack(spacing: 8) {
                     HStack {
-                        Text("Tempo").font(.caption).foregroundStyle(secondaryColor)
+                        Text(L10n.tempo.localized()).font(.caption).foregroundStyle(secondaryColor)
                         Spacer()
                         Text("\(Int(speed)) px/s")
                             .font(.system(size: 13, weight: .bold, design: .monospaced))
@@ -443,7 +443,7 @@ struct TeleprompterView: View {
                     HStack(spacing: 12) {
                         Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                             .font(.title2)
-                        Text(isPlaying ? "Pauza" : "Odtwarzaj")
+                        Text(isPlaying ? L10n.pause.localized() : L10n.play.localized())
                             .font(.headline).fontWeight(.semibold)
                     }
                     .foregroundStyle(.black)
@@ -457,7 +457,7 @@ struct TeleprompterView: View {
                 // Info
                 HStack(spacing: 16) {
                     Image(systemName: "hand.draw").foregroundStyle(.orange.opacity(0.7))
-                    Text("Przewiń palcem w dowolnym momencie")
+                    Text(L10n.scrollHint.localized())
                         .font(.caption).foregroundStyle(secondaryColor)
                 }
             }
@@ -480,7 +480,7 @@ struct TeleprompterView: View {
         if settings.settings.stopScrollOnManualScroll {
             if isPlaying {
                 stopTimer()
-                showToast("⏸ Zatrzymano")
+                showToast(L10n.pausedToast.localized())
             }
         } else {
             // Tymczasowo wstrzymaj timer (żeby nie walczył z palcem)

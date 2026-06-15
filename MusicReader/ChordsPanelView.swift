@@ -141,7 +141,7 @@ struct ChordsPanelView: View {
                     Image(systemName: "guitars")
                         .foregroundStyle(.orange)
                     
-                    Text("Akordy w piosence")
+                    Text(L10n.chordsInSong.localized())
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(AppTheme.primaryText(for: colorScheme))
@@ -241,7 +241,7 @@ struct ChordsPanelView: View {
                             Image(systemName: "questionmark.circle")
                                 .font(.system(size: 32))
                                 .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
-                            Text("Brak diagramu dla \(selected)")
+                            Text(L10n.noDiagramFor(selected))
                                 .font(.caption)
                                 .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                         }
@@ -319,7 +319,7 @@ struct ChordPopupView: View {
                         Image(systemName: "questionmark.circle")
                             .font(.system(size: 40))
                             .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
-                        Text("Brak diagramu dla tego akordu")
+                        Text(L10n.noDiagramFor(chordName))
                             .font(.subheadline)
                             .foregroundStyle(AppTheme.secondaryText(for: colorScheme))
                     }
